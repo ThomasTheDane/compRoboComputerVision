@@ -1,0 +1,56 @@
+﻿Computational Robotics 2015
+Antonia Elsen, Thomas Nattestad
+
+Computer Vision
+Creating 3D models with 2D images
+
+Instructions: view the README in the SIFT_PMVS folder
+Meshlab or other 3D model software required to view models (.ply files).
+
+What was the goal of your project?
+* Create 3D models from 2D images
+* Explore the algorithms used in this process.
+Describe how your system works.  Make sure to include the basic components and algorithms that comprise your project.
+* Photogrammetry Toolbox
+   * SIFT (Scale invariant feature transform) 
+      * We have explored sift in class extensively and it is used in this toolbox to extract out keypoint features of an image. It then matches and scores the keypoints between the two images. 
+         *    * PMVS (Patch-based Multi-View Stereo) 
+      * Using information extracted from images and the camera that took them, constructs a “3D model” -- a cloud of points defined by their coordinates and surface normal.
+         * Feature Matching
+            * DoG and Harris to detect blob and corner features
+            * SIFT to detect features instead
+         * Patch Creation
+            * Construct patches from feature points:
+            * Provided there are sets of similar features in the same area in other images create a candidate patch. 
+            * After refining the candidate patch’s center and normal vector, test the candidate patch against the other images
+            * If the patch differs little from the area of image it is being compared to (low photometric discrepancy), the patch is deemed valid.
+         * Patch Expansion
+            * For each patch, identify nearby image cells based on certain criteria:
+               * The cell does not contain a patch
+               * When there is not a depth discontinuity
+            * Generate a patch in valid image cells based on its neighboring patches
+         * Filtering
+            * Eliminate outlier patches
+               * Patches that aren’t visible in at least x number of images.
+               * Patches that have very few neighbors
+Describe a design decision you had to make when working on your project and what you ultimately did (and why)? These design decisions could be particular choices for how you implemented some part of an algorithm or perhaps a decision regarding which of two external packages to use in your project.
+* Remove NEATO from the equation (use any camera)
+   * This is largely due to the realization that programming the Neato to travel around an object is largely just busy work that isn’t really related to the interesting parts of the actual computer vision algorithm. 
+* Camera Calibration
+   * Camera Calibration is extremely important in our situation -- we must rectify any distortion before using the images for 3D reconstruction.
+* Implement an existing toolbox
+   * The goal of our project was complex, involving multiple algorithms that worked seamlessly together. If one algorithm failed to work, then the entire process would fail. For that reason we chose to work with an existing, proven toolbox containing the algorithms. 
+How did you structure your code?
+* The code toolbox is structured by breaking down the algorithm into individual scripts that run one after another. 
+   * First there is the bundler, which is responsible for loading the images, identifying focal length of camera used, and running the sift engine on those images.
+      * When we used the RaspPi camera, we were required to change how the bundler extracted camera information (ccd width, focal length, image width / height), since the RaspPi images did not contain any parseable EXIF data. 
+   * The sift engine was called from the bundler, and output a file containing the keypoints + 128 bin 3D histogram.
+   * Optionally, the PMVS engine was called from the bundler, again using the images as well as the keypoints generated from the SIFT algorithm.
+What if any challenges did you face along the way?
+* Working on a complicated system comprised of multiple algorithms - every algorithm had to work seamlessly. Working in a relatively large python project, it was often hard to discover where things were being pulled in from. Additionally, despite attempted commenting, there was a lot of time spent digging into what sections of code were actually doing. 
+* The bundler relied heavily on a built-in camera database; it would extract the camera make and model from the EXIF, and look up the ccd width in its database. Not every camera has a parameter called “ccd width”, such as CMOS cameras. The ccd width is just a representation of the camera sensor’s width, so we were required to look up our camera’s information. It was easy enough to add our cameras to the database, but more complicated when the images didn’t contain any EXIF information at all. We had to bypass a whole section of the bundler and provide the camera focal length, sensor width, and image size directly.
+What would you do to improve your project if you had more time?
+* Implement variations of the algorithms used (GLOH, a SIFT-like algorithm)
+* Investigate additional algorithms that would work alongside the currently implemented 
+Did you learn any interesting lessons for future robotic programming projects? These could relate to working on robotics projects in teams, working on more open-ended (and longer term) problems, or any other relevant topic.
+* When working with large projects that does a lot of the work for you, discovering how the piping / formatting of the various stages works is vital to interfacing with it. This extends to the lesson that if you are writing a large project that you intend others to use, it is a good idea to be very clear about the input / output format of the various stages.
